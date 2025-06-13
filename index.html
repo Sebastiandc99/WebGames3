@@ -54,7 +54,8 @@ back.onclick = () => {
 /* --- laberinto --- */
 const mazeImg = new Image();
 mazeImg.src = 'laberinto.png';
-const MAZE_SCALE = 0.8; // tamaño de fondo reducido
+const BASE_SCALE = 0.8;             // escala máxima original
+let MAZE_SCALE = BASE_SCALE;        // escala utilizada en el juego
 
 /* --- GIF del protagonista --- */
 const heroGif = document.createElement('img');
@@ -78,7 +79,9 @@ function createZamoraGif(){
   const img=document.createElement('img');
   img.src='zamora.gif';
   Object.assign(img.style,{
-    position:'absolute',width:'40px',height:'40px',
+    position:'absolute',
+    width: zamoraGame.SPR + 'px',
+    height: zamoraGame.SPR + 'px',
     pointerEvents:'none',zIndex:1000,display:'block'
   });
   document.body.appendChild(img);
@@ -87,8 +90,9 @@ function createZamoraGif(){
 
 /* ---------- objeto principal ---------- */
 const zamoraGame = {
-  SPR : 40,             // tamaño sprite
-  step: 18,             // tamaño paso del laberinto
+  SPR : 40,             // tamaño sprite (ajustado al BASE_SCALE)
+  step: 18,             // tamaño paso base
+  scale: BASE_SCALE,
   moveFreq:6,           // frames por movimiento de Zamora
   heroFreq:6,           // frames por movimiento del héroe
   keys:{}, frame:0, score:0, lives:4,
@@ -102,8 +106,18 @@ const zamoraGame = {
     playZamoraMusic();
 
     const begin = () => {
-      const w = Math.round(mazeImg.width * MAZE_SCALE);
-      const h = Math.round(mazeImg.height * MAZE_SCALE);
+      MAZE_SCALE = Math.min(
+        BASE_SCALE,
+        window.innerWidth  / mazeImg.width,
+        window.innerHeight / mazeImg.height
+      );
+      this.scale = MAZE_SCALE;
+      this.SPR  = 40 * (this.scale / BASE_SCALE);
+      this.step = 18 * (this.scale / BASE_SCALE);
+      heroGif.style.width = heroGif.style.height = this.SPR + 'px';
+      enemyGif.style.width = enemyGif.style.height = this.SPR + 'px';
+      const w = Math.round(mazeImg.width * this.scale);
+      const h = Math.round(mazeImg.height * this.scale);
       canvas.width  = w;
       canvas.height = h;
       const mazeCanvas = Object.assign(document.createElement('canvas'), {width:w, height:h});
@@ -149,8 +163,8 @@ const zamoraGame = {
     }
     this.zs=[Object.assign({gif:enemyGif}, this.randomSpawn())];
     {
-      const x = Math.round(432*MAZE_SCALE);
-      const y = Math.round(180*MAZE_SCALE);
+      const x = Math.round(432*this.scale);
+      const y = Math.round(180*this.scale);
       this.p={
         x: Math.round(x/this.step)*this.step,
         y: Math.round(y/this.step)*this.step
@@ -170,8 +184,8 @@ const zamoraGame = {
     }
     this.zs=[Object.assign({gif:enemyGif}, this.randomSpawn())];
     {
-      const x = Math.round(432*MAZE_SCALE);
-      const y = Math.round(180*MAZE_SCALE);
+      const x = Math.round(432*this.scale);
+      const y = Math.round(180*this.scale);
       this.p={
         x: Math.round(x/this.step)*this.step,
         y: Math.round(y/this.step)*this.step
@@ -194,7 +208,7 @@ const zamoraGame = {
         if(Math.hypot(this.p.x-sx,this.p.y-sy)<this.SPR) continue;
         return {x:sx,y:sy};
       }
-      return {x:Math.round(806*MAZE_SCALE),y:Math.round(325*MAZE_SCALE)};
+      return {x:Math.round(806*this.scale),y:Math.round(325*this.scale)};
   },
 
   /* -------- colisión píxel‑perfect -------- */

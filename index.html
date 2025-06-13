@@ -148,7 +148,14 @@ const zamoraGame = {
       if(z.gif !== enemyGif) z.gif.remove();
     }
     this.zs=[Object.assign({gif:enemyGif}, this.randomSpawn())];
-    this.p={x:Math.round(432*MAZE_SCALE),y:Math.round(180*MAZE_SCALE)}; // inicio en pasillo libre
+    {
+      const x = Math.round(432*MAZE_SCALE);
+      const y = Math.round(180*MAZE_SCALE);
+      this.p={
+        x: Math.round(x/this.step)*this.step,
+        y: Math.round(y/this.step)*this.step
+      }; // inicio en pasillo libre
+    }
     this.heroMoving=false;
     zamoraMusic.currentTime=0;
     heroGif.src="hombre.gif";
@@ -162,7 +169,14 @@ const zamoraGame = {
       if(z.gif !== enemyGif) z.gif.remove();
     }
     this.zs=[Object.assign({gif:enemyGif}, this.randomSpawn())];
-    this.p={x:Math.round(432*MAZE_SCALE),y:Math.round(180*MAZE_SCALE)}; // inicio en pasillo libre
+    {
+      const x = Math.round(432*MAZE_SCALE);
+      const y = Math.round(180*MAZE_SCALE);
+      this.p={
+        x: Math.round(x/this.step)*this.step,
+        y: Math.round(y/this.step)*this.step
+      }; // inicio en pasillo libre
+    }
     this.heroMoving=false;
     zamoraMusic.currentTime=0;
     heroGif.src="hombre.gif";

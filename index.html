@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mini Juegos: Pong · Breakout · El Eternauta · Escapa de Zamora</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:sans-serif;background:#111;color:#eee;
+       display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden}
+  #menu,canvas{text-align:center}
+  button{padding:1rem 2rem;margin:.8rem;font-size:1.1rem;border:none;border-radius:8px;
+         cursor:pointer;background:#2196f3;color:#fff}
+  button:hover{background:#1976d2}
+  #backBtn{position:absolute;top:20px;left:20px}
+</style>
+</head>
+<body>
+  <div id="menu">
+    <h1>Elige un juego</h1>
+    <button id="pongBtn">Pong</button>
+    <button id="breakoutBtn">Breakout</button>
+    <button id="eternautaBtn">El Eternauta</button>
+    <button id="zamoraBtn">Escapa de Zamora</button>
+  </div>
+  <canvas id="gameCanvas" width="800" height="450" style="display:none;border:1px solid #555"></canvas>
+  <button id="backBtn" style="display:none">⬅ Volver al menú</button>
+
+<script>
+// util navegación
+const canvas=document.getElementById('gameCanvas');
+const ctx   =canvas.getContext('2d');
+const menu  =document.getElementById('menu');
+const back  =document.getElementById('backBtn');
+const hitSound=new Audio("sound/golpe_pelota.mp3");
+const zamoraMusic=new Audio('musica_zamora.mp3');
+zamoraMusic.loop=true;
+zamoraMusic.volume=0.3;
+zamoraMusic.preload='auto';
+const eternautaMusic=new Audio("musica_eternauta.mp3");
+eternautaMusic.loop=true;
+eternautaMusic.volume=0.3;
+eternautaMusic.preload="auto";
+function playEternautaMusic(){
+  const p=eternautaMusic.play();
+  if(p){
+    p.catch(()=>{
+      document.body.addEventListener('click', playEternautaMusic, {once:true});
+    });
+  }
+}
+function playZamoraMusic(){
+  const p=zamoraMusic.play();
+  if(p){
+    p.catch(()=>{
+      document.body.addEventListener('click', playZamoraMusic, {once:true});
+    });
+  }
+}
+let anim,current=null;
+function stop(){cancelAnimationFrame(anim);}function clearKeys(){window.onkeydown=window.onkeyup=null;}
+back.onclick = () => {
+  stop(); clearKeys();
+  if(current==='eternauta') eternauta.detach();
+  if(current==='zamora')    zamoraGame.detach();   // ← añadir
+  canvas.style.display='none'; back.style.display='none'; menu.style.display='block';
+  current=null;
+};
+
+/* ====== PONG ====== */
+let P={up:false,down:false,s1:0,s2:0};
+const pong={pH:70,pW:10,bR:8,speed:3,lastSpeedInc:0,startTime:0,timeScore:0,titleHue:0,
+  init(resetAll=false){
+    canvas.width=600;canvas.height=400;
+    this.y1=this.y2=(canvas.height-this.pH)/2;
+    this.x=canvas.width/2;this.y=canvas.height/2;
+    this.vx=Math.random()>0.5?this.speed:-this.speed;
+    this.vy=(Math.random()*2-1)*this.speed;
+    if(resetAll){P.s1=P.s2=0;this.speed=3;this.startTime=Date.now();this.lastSpeedInc=this.startTime;}
+  },
+  start(){this.init(true);
+    window.onkeydown=e=>{if(e.key==='ArrowUp'||e.key==='w')P.up=true;if(e.key==='ArrowDown'||e.key==='s')P.down=true;};
+    window.onkeyup  =e=>{if(e.key==='ArrowUp'||e.key==='w')P.up=false;if(e.key==='ArrowDown'||e.key==='s')P.down=false;};
+    const loop=()=>{this.upd();this.draw();anim=requestAnimationFrame(loop);};loop();
+  },
+  upd(){
+    if(P.up&&this.y1>0)this.y1-=5;
+    if(P.down&&this.y1+this.pH<canvas.height)this.y1+=5;
+    if(this.y2+this.pH/2<this.y)this.y2+=4;else if(this.y2+this.pH/2>this.y)this.y2-=4;
+    if(this.y2<0)this.y2=0;else if(this.y2+this.pH>canvas.height)this.y2=canvas.height-this.pH;
+    const now=Date.now();
+    this.timeScore=Math.floor((now-this.startTime)/1000)*10;
+    if(now-this.lastSpeedInc>=15000){
+      const sx=Math.sign(this.vx)||1, sy=Math.sign(this.vy)||1;
+      this.speed+=1;this.vx=sx*(Math.abs(this.vx)+1);this.vy=sy*(Math.abs(this.vy)+1);
+      this.lastSpeedInc=now;
+    }
+    this.x+=this.vx;this.y+=this.vy;
+    if(this.y-this.bR<0||this.y+this.bR>canvas.height){
+      this.vy*=-1;
+      hitSound.currentTime=0;hitSound.play();
+    }
+    if(this.x-this.bR<20&&this.y>this.y1&&this.y<this.y1+this.pH){
+      this.vx*=-1;
+      hitSound.currentTime=0;hitSound.play();
+    }
+    if(this.x+this.bR>canvas.width-20&&this.y>this.y2&&this.y<this.y2+this.pH){
+      this.vx*=-1;
+      hitSound.currentTime=0;hitSound.play();
+    }
+    if(this.x<0){P.s2++;this.init();}
+    if(this.x>canvas.width){P.s1++;this.init();}
+  },
+  draw(){
+    ctx.fillStyle='#111';ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#fff';
+    ctx.fillRect(10,this.y1,this.pW,this.pH);
+    ctx.fillRect(canvas.width-20,this.y2,this.pW,this.pH);
+    ctx.beginPath();ctx.arc(this.x,this.y,this.bR,0,Math.PI*2);ctx.fill();
+    ctx.save();
+    ctx.font='32px "Press Start 2P",sans-serif';
+    ctx.textAlign='center';
+    ctx.lineWidth=2;
+    this.titleHue=(this.titleHue+2)%360;
+    const neon=`hsl(${this.titleHue},100%,60%)`;
+    const neonStroke=`hsl(${this.titleHue},100%,80%)`;
+    ctx.fillStyle=neon;
+    ctx.strokeStyle=neonStroke;
+    ctx.shadowBlur=14;
+    ctx.shadowColor=neonStroke;
+    ctx.fillText('PONG',canvas.width/2,45);
+    ctx.strokeText('PONG',canvas.width/2,45);
+    ctx.restore();
+    ctx.font='20px sans-serif';
+    ctx.fillStyle='#fff';
+    const scoreY=80;
+    ctx.fillText(P.s1,canvas.width/4,scoreY);
+    ctx.fillText(P.s2,canvas.width*3/4,scoreY);
+    ctx.fillText(this.timeScore,canvas.width/2-10,scoreY);
+  }
+};
+
+/* ====== BREAKOUT ====== */
+const breakout={pW:80,pH:10,
+  start(){canvas.width=800;canvas.height=450;this.reset();
+    window.onkeydown=e=>{if(e.key==='ArrowRight')this.right=true;else if(e.key==='ArrowLeft')this.left=true;};
+    window.onkeyup  =e=>{if(e.key==='ArrowRight')this.right=false;else if(e.key==='ArrowLeft')this.left=false;};
+    const loop=()=>{this.update();this.draw();anim=requestAnimationFrame(loop);};loop();
+  },
+  reset(){this.right=this.left=false;this.ballX=canvas.width/2;this.ballY=canvas.height-30;this.dx=3;this.dy=-3;this.ballR=8;this.paddleX=(canvas.width-this.pW)/2;this.rows=5;this.cols=7;this.bW=70;this.bH=20;this.pad=10;this.offT=30;this.offL=35;this.bricks=[];for(let c=0;c<this.cols;c++)this.bricks[c]=Array(this.rows).fill(1);},
+  hit(){
+    for(let c=0;c<this.cols;c++)for(let r=0;r<this.rows;r++){
+      if(!this.bricks[c][r])continue;
+      let bx=(c*(this.bW+this.pad))+this.offL,by=(r*(this.bH+this.pad))+this.offT;
+      if(this.ballX>bx&&this.ballX<bx+this.bW&&this.ballY>by&&this.ballY<by+this.bH){
+        this.dy*=-1;this.bricks[c][r]=0;
+        hitSound.currentTime=0;hitSound.play();
+      }
+    }
+  },
+  update(){
+    this.hit();
+    if(this.ballX+this.dx>canvas.width-this.ballR||this.ballX+this.dx<this.ballR){
+      this.dx*=-1;hitSound.currentTime=0;hitSound.play();
+    }
+    if(this.ballY+this.dy<this.ballR){
+      this.dy*=-1;hitSound.currentTime=0;hitSound.play();
+    }
+    else if(this.ballY+this.dy>canvas.height-this.ballR){
+      if(this.ballX>this.paddleX&&this.ballX<this.paddleX+this.pW){
+        this.dy*=-1;hitSound.currentTime=0;hitSound.play();
+      }else{this.reset();return;}
+    }
+    this.ballX+=this.dx;this.ballY+=this.dy;
+    if(this.right&&this.paddleX<canvas.width-this.pW)this.paddleX+=5;else if(this.left&&this.paddleX>0)this.paddleX-=5;
+  },
+  draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#f44336';
+    for(let c=0;c<this.cols;c++)for(let r=0;r<this.rows;r++){
+      if(!this.bricks[c][r])continue;
+      let bx=(c*(this.bW+this.pad))+this.offL,by=(r*(this.bH+this.pad))+this.offT;
+      ctx.fillRect(bx,by,this.bW,this.bH);
+    }
+    ctx.fillStyle='#0095DD';ctx.fillRect(this.paddleX,canvas.height-this.pH,this.pW,this.pH);
+    ctx.fillStyle='#00e676';ctx.beginPath();ctx.arc(this.ballX,this.ballY,this.ballR,0,Math.PI*2);ctx.fill();
+  }
+};
+
+/* ====== EL ETERNAUTA ====== */
+const heroImg=new Image(); heroImg.src='hero.png';
+const enemyImg=new Image(); enemyImg.src='enemy.png';
+const eternauta={g:0.5,ground:40,keys:{},difficulty:0,
+  start(){canvas.width=800;canvas.height=450;this.reset();
+    eternautaMusic.currentTime=0;
+    playEternautaMusic();
+    window.onkeydown=e=>this.keys[e.key]=true; window.onkeyup=e=>this.keys[e.key]=false;
+    this.loop=()=>{this.update();this.draw();anim=requestAnimationFrame(this.loop);};
+    if(heroImg.complete&&enemyImg.complete)this.loop();else heroImg.onload=enemyImg.onload=()=>this.loop();
+  },
+  detach(){window.onkeydown=window.onkeyup=null; eternautaMusic.pause(); eternautaMusic.currentTime=0;},
+  reset(){
+    this.p={x:50,y:canvas.height-40-48,w:32,h:48,vx:0,vy:0,onG:false};
+    this.enemies=[];this.score=0;this.spawnCD=120;this.difficulty=0;this.frame=0;
+    this.snow=Array.from({length:160},()=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*2+1,s:Math.random()*1+0.5}));
+    eternautaMusic.currentTime=0;
+    playEternautaMusic();
+  },
+  spawn(){
+    const spd=1+this.difficulty*0.1,vx=(-2-Math.random())*spd;
+    const batch=Math.min(1+Math.floor(this.difficulty/5),3);
+    for(let i=0;i<batch;i++)this.enemies.push({x:canvas.width+Math.random()*200+i*40,y:canvas.height-40-32,w:32,h:32,vx,dead:false});
+  },
+  update(){
+    this.frame++;const p=this.p;
+    p.vx=(this.keys['ArrowLeft']||this.keys['a']?-3:0)+(this.keys['ArrowRight']||this.keys['d']?3:0);
+    if((this.keys['ArrowUp']||this.keys['w']||this.keys[' '])&&p.onG){p.vy=-11;p.onG=false;}
+    p.vy+=this.g;p.x+=p.vx;p.y+=p.vy;
+    if(p.y+p.h>canvas.height-this.ground){p.y=canvas.height-this.ground-p.h;p.vy=0;p.onG=true;}
+    if(p.x<0)p.x=0;if(p.x+p.w>canvas.width)p.x=canvas.width-p.w;
+    for(let e of this.enemies){
+      e.x+=e.vx;
+      if(this.collide(p,e)){
+        if(p.vy>0&&p.y+p.h-e.y<12){e.dead=true;p.vy=-8;this.score+=10;}
+        else{this.reset();return;}
+      }
+    }
+    this.enemies=this.enemies.filter(e=>!e.dead&&e.x+e.w>0);
+    if(--this.spawnCD<=0){this.spawn();const minCD=Math.max(40,90-this.difficulty*5);this.spawnCD=minCD+Math.floor(Math.random()*minCD);}
+    if(this.frame%300===0)this.difficulty++;
+    for(let s of this.snow){s.y+=s.s;if(s.y>canvas.height){s.y=0;s.x=Math.random()*canvas.width;}}
+  },
+  draw(){
+    ctx.fillStyle='#114';ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#222';ctx.fillRect(0,canvas.height-this.ground,canvas.width,this.ground);
+    ctx.fillStyle='#fff';for(let s of this.snow){ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();}
+    if(heroImg.complete)ctx.drawImage(heroImg,this.p.x,this.p.y,this.p.w,this.p.h);else{ctx.fillStyle='#0af';ctx.fillRect(this.p.x,this.p.y,this.p.w,this.p.h);}
+    for(let e of this.enemies){
+      if(enemyImg.complete)ctx.drawImage(enemyImg,e.x,e.y,e.w,e.h);else{ctx.fillStyle='#a52';ctx.fillRect(e.x,e.y,e.w,e.h);}
+    }
+    ctx.font='20px sans-serif';ctx.fillStyle='#fff';ctx.fillText('Score: '+this.score,10,30);
+  }
+};
+
+/* ====== ESCAPA DE ZAMORA (píxel‑perfect + GIFs animados) ====== */
+
+/* --- laberinto --- */
+const mazeImg = new Image();
+mazeImg.src = 'data:image/png;base64,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';          // usa base64 o servidor http para evitar CORS
+mazeImg.crossOrigin = 'anonymous'; // necesario si sirves la imagen
+
+/* --- GIF del protagonista --- */
+const heroGif = document.createElement('img');
+heroGif.src = 'hombre.gif';
+Object.assign(heroGif.style, {
+  position:'absolute', width:'40px', height:'40px',
+  pointerEvents:'none', zIndex:1000, display:'none'
+});
+document.body.appendChild(heroGif);
+
+/* --- GIF de Zamora --- */
+const enemyGif = document.createElement('img');
+enemyGif.src = 'zamora.gif';
+Object.assign(enemyGif.style, {
+  position:'absolute', width:'40px', height:'40px',
+  pointerEvents:'none', zIndex:1000, display:'none'
+});
+document.body.appendChild(enemyGif);
+
+function createZamoraGif(){
+  const img=document.createElement('img');
+  img.src='zamora.gif';
+  Object.assign(img.style,{
+    position:'absolute',width:'40px',height:'40px',
+    pointerEvents:'none',zIndex:1000,display:'block'
+  });
+  document.body.appendChild(img);
+  return img;
+}
+
+/* ---------- objeto principal ---------- */
+const zamoraGame = {
+  SPR : 40,             // tamaño sprite
+  step: 10,             // tamaño paso del laberinto
+  moveFreq:6,           // frames por movimiento de Zamora
+  keys:{}, frame:0, score:0, lives:4,
+  p:{}, zs:[], pix:null, nextSpawn:1800,
+  titleHue:0,
+  heroMoving:false,
+
+  /* -------- iniciar -------- */
+  start(){
+    canvas.width  = 609;
+    canvas.height = 528;
+
+    zamoraMusic.currentTime = 0;
+    playZamoraMusic();
+
+    const begin = () => {
+      /* capturar bitmap del laberinto */
+      const off   = Object.assign(document.createElement('canvas'), {width:609, height:528});
+      off.getContext('2d').drawImage(mazeImg,0,0);
+      this.pix = off.getContext('2d').getImageData(0,0,609,528).data;
+
+      this.reset();
+
+      /* mostrar GIFs */
+      heroGif .style.display = 'block';
+      enemyGif.style.display = 'block';
+      this.zs[0].gif = enemyGif;
+
+      window.onkeydown = e => this.keys[e.key]=true;
+      window.onkeyup   = e => this.keys[e.key]=false;
+
+      this.loop = ()=>{ this.update(); this.draw(); anim = requestAnimationFrame(this.loop); };
+      this.loop();
+    };
+
+    if(mazeImg.complete) begin(); else mazeImg.onload = begin;
+  },
+
+  /* -------- salir -------- */
+  detach(){
+    window.onkeydown = window.onkeyup = null;
+    zamoraMusic.pause();
+    zamoraMusic.currentTime = 0;
+    heroGif.style.display='none';
+    for(const z of this.zs){ z.gif.style.display='none'; }
+  },
+
+  /* -------- reinicio -------- */
+  reset(){
+    this.keys={}; this.frame=0; this.score=0; this.lives=4;
+    this.moveFreq=6; this.nextSpawn=1800;
+    for(const z of this.zs){
+      if(z.gif !== enemyGif) z.gif.remove();
+    }
+    this.zs=[Object.assign({gif:enemyGif}, this.randomSpawn())];
+    this.p={x:100,y:240};
+    this.heroMoving=false;
+    zamoraMusic.currentTime=0;
+    heroGif.src="hombre.gif";
+    playZamoraMusic();
+  },
+
+  partialReset(){
+    this.keys={}; this.frame=0; this.score=0;
+    this.moveFreq=6; this.nextSpawn=1800;
+    for(const z of this.zs){
+      if(z.gif !== enemyGif) z.gif.remove();
+    }
+    this.zs=[Object.assign({gif:enemyGif}, this.randomSpawn())];
+    this.p={x:100,y:240};
+    this.heroMoving=false;
+    zamoraMusic.currentTime=0;
+    heroGif.src="hombre.gif";
+    playZamoraMusic();
+  },
+
+  randomSpawn(ignore=null){
+      for(let i=0;i<50;i++){
+        const x=Math.round(Math.random()*(canvas.width-this.SPR));
+        const y=Math.round(Math.random()*(canvas.height-this.SPR));
+        const sx=Math.round(x/this.step)*this.step;
+        const sy=Math.round(y/this.step)*this.step;
+        if(this.blocked(sx,sy)) continue;
+        if(this.zs.some(z=>z!==ignore && Math.hypot(z.x-sx,z.y-sy)<this.SPR)) continue;
+        if(Math.hypot(this.p.x-sx,this.p.y-sy)<this.SPR) continue;
+        return {x:sx,y:sy};
+      }
+      return {x:460,y:240};
+  },
+
+  /* -------- colisión píxel‑perfect -------- */
+  blocked(nx,ny){
+    const d=this.pix, w=609, h=528, s=this.SPR-4;      // margen 4 px
+    const corners=[[nx,ny],[nx+s,ny],[nx,ny+s],[nx+s,ny+s]];
+    return corners.some(([x,y])=>{
+      if(x<0||y<0||x>=w||y>=h) return true;            // muro fuera del canvas
+      const i=((y|0)*w+(x|0))*4;
+      return d[i]<50&&d[i+1]<50&&d[i+2]<50;           // píxel negro ≈ muro
+    });
+  },
+  move(o,dx,dy){
+    const nx=o.x+dx, ny=o.y+dy;
+    if(this.blocked(nx,ny)) return;
+    if(o!==this.p && this.zs.some(z=>z!==o && Math.hypot(z.x-nx,z.y-ny)<this.SPR)) return;
+    o.x=nx; o.y=ny;
+  },
+
+  /* -------- calcular ruta -------- */
+  nextStep(z){
+    const st=this.step,
+          sx=Math.floor(z.x/st)*st,
+          sy=Math.floor(z.y/st)*st,
+          tx=Math.floor(this.p.x/st)*st,
+          ty=Math.floor(this.p.y/st)*st,
+          dirs=[{dx:st,dy:0},{dx:-st,dy:0},{dx:0,dy:st},{dx:0,dy:-st}];
+
+    const q=[{x:tx,y:ty}], dist={};
+    dist[tx+','+ty]=0;
+    while(q.length){
+      const n=q.shift(),d=dist[n.x+','+n.y];
+      for(const dir of dirs){
+        const nx=n.x+dir.dx, ny=n.y+dir.dy, key=nx+','+ny;
+        if(dist[key]!==undefined||this.blocked(nx,ny)) continue;
+        dist[key]=d+1; q.push({x:nx,y:ny});
+      }
+    }
+
+    let best=null,bestDist=1e9;
+    for(const dir of dirs){
+      const nx=sx+dir.dx, ny=sy+dir.dy,
+            key=Math.round(nx/st)*st+','+Math.round(ny/st)*st;
+      const d=dist[key];
+      if(d!==undefined&&d<bestDist&&!this.blocked(nx,ny)){
+        bestDist=d; best=dir;
+      }
+    }
+    return best;
+  },
+
+  /* -------- lógica de juego -------- */
+  update(){
+    /* movimiento héroe */
+    const mvLeft  = this.keys['ArrowLeft']  || this.keys['a'];
+    const mvRight = this.keys['ArrowRight'] || this.keys['d'];
+    const mvUp    = this.keys['ArrowUp']    || this.keys['w'];
+    const mvDown  = this.keys['ArrowDown']  || this.keys['s'];
+    if(mvLeft)  this.move(this.p,-this.step,0);
+    if(mvRight) this.move(this.p, this.step,0);
+    if(mvUp)    this.move(this.p,0,-this.step);
+    if(mvDown)  this.move(this.p,0, this.step);
+    const moving = mvLeft||mvRight||mvUp||mvDown;
+    if(moving){
+      if(!this.heroMoving){ this.heroMoving=true; heroGif.src='hombre.gif'; }
+    }else{
+      if(this.heroMoving){ this.heroMoving=false; heroGif.src="hombre.gif"; }
+    }
+
+    /* Zamoras se mueven cada moveFreq frames */
+    if(++this.frame % this.moveFreq === 0){
+      for(const z of this.zs){
+        const step = this.nextStep(z);
+        if(step) this.move(z, step.dx, step.dy);
+        else {
+          const dirs=[{dx:this.step,dy:0},{dx:-this.step,dy:0},{dx:0,dy:this.step},{dx:0,dy:-this.step}];
+          const opts=dirs.filter(d=>!this.blocked(z.x+d.dx,z.y+d.dy));
+          if(opts.length){
+            const r=opts[Math.floor(Math.random()*opts.length)];
+            this.move(z,r.dx,r.dy);
+          }
+        }
+      }
+    }
+
+    /* generar nuevo Zamora cada 30 segundos */
+    if(this.frame===this.nextSpawn){
+      this.nextSpawn+=1800;
+      const gif=createZamoraGif();
+      const pos=this.randomSpawn();
+      this.zs.push(Object.assign({gif}, pos));
+      if(this.moveFreq>2) this.moveFreq--;
+    }
+
+    /* score +1 cada 30 frames */
+    if(this.frame%30===0) this.score++;
+
+    /* colisión sprites */
+    for(const z of this.zs){
+      if(Math.hypot(this.p.x-z.x,this.p.y-z.y)<this.SPR-6){
+        if(--this.lives<=0){
+          alert('¡Te atraparon!');
+          this.reset();
+        } else {
+          this.partialReset();
+        }
+        break;
+      }
+    }
+  },
+
+  /* -------- dibujado -------- */
+  draw(){
+    ctx.drawImage(mazeImg,0,0);
+
+    /* cartel neón */
+    ctx.save();
+    ctx.font='32px "Press Start 2P",sans-serif';
+    ctx.textAlign='center';
+    ctx.lineWidth=2;
+    this.titleHue = (this.titleHue + 2) % 360;
+    const neon = `hsl(${this.titleHue},100%,60%)`;
+    const neonStroke = `hsl(${this.titleHue},100%,80%)`;
+    ctx.fillStyle=neon;
+    ctx.strokeStyle=neonStroke;
+    ctx.shadowBlur=14;
+    ctx.shadowColor=neonStroke;
+    ctx.fillText  ('Escapa de Zamora', canvas.width/2, 45);
+    ctx.strokeText('Escapa de Zamora', canvas.width/2, 45);
+    ctx.restore();
+
+    /* colocar GIFs sobre el canvas */
+    heroGif.style.left = (canvas.offsetLeft + this.p.x) + 'px';
+    heroGif.style.top  = (canvas.offsetTop  + this.p.y) + 'px';
+    for(const z of this.zs){
+      z.gif.style.left = (canvas.offsetLeft + z.x) + 'px';
+      z.gif.style.top  = (canvas.offsetTop  + z.y) + 'px';
+      z.gif.style.display='block';
+    }
+
+    /* HUD */
+    ctx.textAlign='left';
+    ctx.font='18px sans-serif';
+    ctx.fillStyle='#000';                      // score negro
+    ctx.fillText('Score: '+this.score, canvas.width-140, 36);
+    ctx.fillStyle='#000';
+    ctx.fillText('Vidas: '+this.lives, 10, canvas.height-12);
+  }
+};
+
+
+/* ----- botones ----- */
+document.getElementById('pongBtn').onclick    =()=>{menu.style.display='none';canvas.style.display='block';back.style.display='block';current='pong';pong.start();};
+document.getElementById('breakoutBtn').onclick=()=>{menu.style.display='none';canvas.style.display='block';back.style.display='block';current='breakout';breakout.start();};
+document.getElementById('eternautaBtn').onclick=()=>{menu.style.display='none';canvas.style.display='block';back.style.display='block';current='eternauta';eternauta.start();};
+document.getElementById('zamoraBtn').onclick  =()=>{menu.style.display='none';canvas.style.display='block';back.style.display='block';current='zamora';zamoraGame.start();};
+
+</script>
+</body>
+</html>

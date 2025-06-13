@@ -19,7 +19,7 @@
     <h1>Elige un juego</h1>
     <button id="zamoraBtn">Escapa de Zamora</button>
   </div>
-  <canvas id="gameCanvas" width="914" height="792" style="display:none;border:1px solid #555"></canvas>
+  <canvas id="gameCanvas" width="1067" height="716" style="display:none;border:1px solid #555"></canvas>
   <button id="backBtn" style="display:none">⬅ Volver al menú</button>
 
 <script>
@@ -54,7 +54,7 @@ back.onclick = () => {
 /* --- laberinto --- */
 const mazeImg = new Image();
 mazeImg.src = 'laberinto.png';
-const MAZE_SCALE = 1.5;
+const MAZE_SCALE = 1;
 
 /* --- GIF del protagonista --- */
 const heroGif = document.createElement('img');
@@ -88,7 +88,7 @@ function createZamoraGif(){
 /* ---------- objeto principal ---------- */
 const zamoraGame = {
   SPR : 40,             // tamaño sprite
-  step: 10,             // tamaño paso del laberinto
+  step: 18,             // tamaño paso del laberinto
   moveFreq:6,           // frames por movimiento de Zamora
   keys:{}, frame:0, score:0, lives:4,
   p:{}, zs:[], pix:null, mazeCanvas:null, nextSpawn:1800,
@@ -147,7 +147,7 @@ const zamoraGame = {
       if(z.gif !== enemyGif) z.gif.remove();
     }
     this.zs=[Object.assign({gif:enemyGif}, this.randomSpawn())];
-    this.p={x:Math.round(100*MAZE_SCALE),y:Math.round(240*MAZE_SCALE)};
+    this.p={x:Math.round(175*MAZE_SCALE),y:Math.round(325*MAZE_SCALE)};
     this.heroMoving=false;
     zamoraMusic.currentTime=0;
     heroGif.src="hombre.gif";
@@ -161,7 +161,7 @@ const zamoraGame = {
       if(z.gif !== enemyGif) z.gif.remove();
     }
     this.zs=[Object.assign({gif:enemyGif}, this.randomSpawn())];
-    this.p={x:Math.round(100*MAZE_SCALE),y:Math.round(240*MAZE_SCALE)};
+    this.p={x:Math.round(175*MAZE_SCALE),y:Math.round(325*MAZE_SCALE)};
     this.heroMoving=false;
     zamoraMusic.currentTime=0;
     heroGif.src="hombre.gif";
@@ -179,7 +179,7 @@ const zamoraGame = {
         if(Math.hypot(this.p.x-sx,this.p.y-sy)<this.SPR) continue;
         return {x:sx,y:sy};
       }
-      return {x:Math.round(460*MAZE_SCALE),y:Math.round(240*MAZE_SCALE)};
+      return {x:Math.round(806*MAZE_SCALE),y:Math.round(325*MAZE_SCALE)};
   },
 
   /* -------- colisión píxel‑perfect -------- */

@@ -54,7 +54,7 @@ back.onclick = () => {
 /* --- laberinto --- */
 const mazeImg = new Image();
 mazeImg.src = 'laberinto.png';
-const MAZE_SCALE = 1;
+const MAZE_SCALE = 1.1; // mapa ligeramente más grande
 
 /* --- GIF del protagonista --- */
 const heroGif = document.createElement('img');
@@ -148,7 +148,7 @@ const zamoraGame = {
       if(z.gif !== enemyGif) z.gif.remove();
     }
     this.zs=[Object.assign({gif:enemyGif}, this.randomSpawn())];
-    this.p={x:Math.round(175*MAZE_SCALE),y:Math.round(325*MAZE_SCALE)};
+    this.p={x:Math.round(432*MAZE_SCALE),y:Math.round(180*MAZE_SCALE)}; // inicio en pasillo libre
     this.heroMoving=false;
     zamoraMusic.currentTime=0;
     heroGif.src="hombre.gif";
@@ -162,7 +162,7 @@ const zamoraGame = {
       if(z.gif !== enemyGif) z.gif.remove();
     }
     this.zs=[Object.assign({gif:enemyGif}, this.randomSpawn())];
-    this.p={x:Math.round(175*MAZE_SCALE),y:Math.round(325*MAZE_SCALE)};
+    this.p={x:Math.round(432*MAZE_SCALE),y:Math.round(180*MAZE_SCALE)}; // inicio en pasillo libre
     this.heroMoving=false;
     zamoraMusic.currentTime=0;
     heroGif.src="hombre.gif";

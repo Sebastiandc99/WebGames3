@@ -90,6 +90,7 @@ const zamoraGame = {
   SPR : 40,             // tamaño sprite
   step: 18,             // tamaño paso del laberinto
   moveFreq:6,           // frames por movimiento de Zamora
+  heroFreq:9,           // frames por movimiento del héroe
   keys:{}, frame:0, score:0, lives:4,
   p:{}, zs:[], pix:null, mazeCanvas:null, nextSpawn:1800,
   titleHue:0,
@@ -194,9 +195,13 @@ const zamoraGame = {
     });
   },
   move(o,dx,dy){
-    const nx=o.x+dx, ny=o.y+dy;
-    if(this.blocked(nx,ny)) return;
-    if(o!==this.p && this.zs.some(z=>z!==o && Math.hypot(z.x-nx,z.y-ny)<this.SPR)) return;
+    const steps=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/6));
+    let nx=o.x, ny=o.y;
+    for(let i=0;i<steps;i++){
+      nx+=dx/steps; ny+=dy/steps;
+      if(this.blocked(nx,ny)) return;
+      if(o!==this.p && this.zs.some(z=>z!==o && Math.hypot(z.x-nx,z.y-ny)<this.SPR)) return;
+    }
     o.x=nx; o.y=ny;
   },
 
@@ -239,11 +244,13 @@ const zamoraGame = {
     const mvRight = this.keys['ArrowRight'] || this.keys['d'];
     const mvUp    = this.keys['ArrowUp']    || this.keys['w'];
     const mvDown  = this.keys['ArrowDown']  || this.keys['s'];
-    if(mvLeft)  this.move(this.p,-this.step,0);
-    if(mvRight) this.move(this.p, this.step,0);
-    if(mvUp)    this.move(this.p,0,-this.step);
-    if(mvDown)  this.move(this.p,0, this.step);
     const moving = mvLeft||mvRight||mvUp||mvDown;
+    if(moving && this.frame % this.heroFreq === 0){
+      if(mvLeft)  this.move(this.p,-this.step,0);
+      if(mvRight) this.move(this.p, this.step,0);
+      if(mvUp)    this.move(this.p,0,-this.step);
+      if(mvDown)  this.move(this.p,0, this.step);
+    }
     if(moving){
       if(!this.heroMoving){ this.heroMoving=true; heroGif.src='hombre.gif'; }
     }else{

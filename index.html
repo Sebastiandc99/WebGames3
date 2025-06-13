@@ -19,7 +19,7 @@
     <h1>Elige un juego</h1>
     <button id="zamoraBtn">Escapa de Zamora</button>
   </div>
-  <canvas id="gameCanvas" width="609" height="528" style="display:none;border:1px solid #555"></canvas>
+  <canvas id="gameCanvas" width="914" height="792" style="display:none;border:1px solid #555"></canvas>
   <button id="backBtn" style="display:none">⬅ Volver al menú</button>
 
 <script>
@@ -54,6 +54,7 @@ back.onclick = () => {
 /* --- laberinto --- */
 const mazeImg = new Image();
 mazeImg.src = 'laberinto.png';
+const MAZE_SCALE = 1.5;
 
 /* --- GIF del protagonista --- */
 const heroGif = document.createElement('img');
@@ -90,7 +91,7 @@ const zamoraGame = {
   step: 10,             // tamaño paso del laberinto
   moveFreq:6,           // frames por movimiento de Zamora
   keys:{}, frame:0, score:0, lives:4,
-  p:{}, zs:[], pix:null, nextSpawn:1800,
+  p:{}, zs:[], pix:null, mazeCanvas:null, nextSpawn:1800,
   titleHue:0,
   heroMoving:false,
 
@@ -100,12 +101,17 @@ const zamoraGame = {
     playZamoraMusic();
 
     const begin = () => {
-      canvas.width  = mazeImg.width;
-      canvas.height = mazeImg.height;
+      const w = Math.round(mazeImg.width * MAZE_SCALE);
+      const h = Math.round(mazeImg.height * MAZE_SCALE);
+      canvas.width  = w;
+      canvas.height = h;
+      const mazeCanvas = Object.assign(document.createElement('canvas'), {width:w, height:h});
+      mazeCanvas.getContext('2d').drawImage(mazeImg,0,0,w,h);
+      this.mazeCanvas = mazeCanvas;
       /* capturar bitmap del laberinto */
-      const off = Object.assign(document.createElement('canvas'), {width:canvas.width, height:canvas.height});
-      off.getContext('2d').drawImage(mazeImg,0,0,canvas.width,canvas.height);
-      this.pix = off.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
+      const off = Object.assign(document.createElement('canvas'), {width:w, height:h});
+      off.getContext('2d').drawImage(mazeCanvas,0,0,w,h);
+      this.pix = off.getContext('2d').getImageData(0,0,w,h).data;
 
       this.reset();
 
@@ -141,7 +147,7 @@ const zamoraGame = {
       if(z.gif !== enemyGif) z.gif.remove();
     }
     this.zs=[Object.assign({gif:enemyGif}, this.randomSpawn())];
-    this.p={x:100,y:240};
+    this.p={x:Math.round(100*MAZE_SCALE),y:Math.round(240*MAZE_SCALE)};
     this.heroMoving=false;
     zamoraMusic.currentTime=0;
     heroGif.src="hombre.gif";
@@ -155,7 +161,7 @@ const zamoraGame = {
       if(z.gif !== enemyGif) z.gif.remove();
     }
     this.zs=[Object.assign({gif:enemyGif}, this.randomSpawn())];
-    this.p={x:100,y:240};
+    this.p={x:Math.round(100*MAZE_SCALE),y:Math.round(240*MAZE_SCALE)};
     this.heroMoving=false;
     zamoraMusic.currentTime=0;
     heroGif.src="hombre.gif";
@@ -173,7 +179,7 @@ const zamoraGame = {
         if(Math.hypot(this.p.x-sx,this.p.y-sy)<this.SPR) continue;
         return {x:sx,y:sy};
       }
-      return {x:460,y:240};
+      return {x:Math.round(460*MAZE_SCALE),y:Math.round(240*MAZE_SCALE)};
   },
 
   /* -------- colisión píxel‑perfect -------- */
@@ -288,7 +294,7 @@ const zamoraGame = {
 
   /* -------- dibujado -------- */
   draw(){
-    ctx.drawImage(mazeImg,0,0,canvas.width,canvas.height);
+    ctx.drawImage(this.mazeCanvas,0,0,canvas.width,canvas.height);
 
     /* cartel neón */
     ctx.save();

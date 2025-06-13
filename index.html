@@ -96,13 +96,12 @@ const zamoraGame = {
 
   /* -------- iniciar -------- */
   start(){
-    canvas.width  = 609;
-    canvas.height = 528;
-
     zamoraMusic.currentTime = 0;
     playZamoraMusic();
 
     const begin = () => {
+      canvas.width  = mazeImg.width;
+      canvas.height = mazeImg.height;
       /* capturar bitmap del laberinto */
       const off = Object.assign(document.createElement('canvas'), {width:canvas.width, height:canvas.height});
       off.getContext('2d').drawImage(mazeImg,0,0,canvas.width,canvas.height);

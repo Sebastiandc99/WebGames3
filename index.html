@@ -218,7 +218,8 @@ const zamoraGame = {
     return corners.some(([x,y])=>{
       if(x<0||y<0||x>=w||y>=h) return true;            // fuera del canvas
       const i=((y|0)*w+(x|0))*4;
-      const r=d[i], g=d[i+1], b=d[i+2];
+      const r=d[i], g=d[i+1], b=d[i+2], a=d[i+3];
+      if(a<50) return false;                          // espacio transparente
       return r<50 && g<50 && b<50;                    // pared negra
     });
   },

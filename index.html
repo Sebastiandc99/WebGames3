@@ -61,7 +61,7 @@ let MAZE_SCALE = BASE_SCALE;        // escala utilizada en el juego
 const heroGif = document.createElement('img');
 heroGif.src = 'hombre.gif';
 Object.assign(heroGif.style, {
-  position:'absolute', width:'40px', height:'40px',
+  position:'absolute', width:'32px', height:'32px',
   pointerEvents:'none', zIndex:1000, display:'none'
 });
 document.body.appendChild(heroGif);
@@ -70,7 +70,7 @@ document.body.appendChild(heroGif);
 const enemyGif = document.createElement('img');
 enemyGif.src = 'zamora.gif';
 Object.assign(enemyGif.style, {
-  position:'absolute', width:'40px', height:'40px',
+  position:'absolute', width:'32px', height:'32px',
   pointerEvents:'none', zIndex:1000, display:'none'
 });
 document.body.appendChild(enemyGif);
@@ -90,8 +90,8 @@ function createZamoraGif(){
 
 /* ---------- objeto principal ---------- */
 const zamoraGame = {
-  SPR : 40,             // tamaño sprite (ajustado al BASE_SCALE)
-  step: 18,             // tamaño paso base
+  SPR : 32,             // tamaño sprite (ajustado al BASE_SCALE)
+  step: 16,             // tamaño paso base
   scale: BASE_SCALE,
   moveFreq:6,           // frames por movimiento de Zamora
   heroFreq:6,           // frames por movimiento del héroe
@@ -112,8 +112,8 @@ const zamoraGame = {
         window.innerHeight / mazeImg.height
       );
       this.scale = MAZE_SCALE;
-      this.SPR  = 40 * (this.scale / BASE_SCALE);
-      this.step = 18 * (this.scale / BASE_SCALE);
+      this.SPR  = 32 * (this.scale / BASE_SCALE);
+      this.step = 16 * (this.scale / BASE_SCALE);
       heroGif.style.width = heroGif.style.height = this.SPR + 'px';
       enemyGif.style.width = enemyGif.style.height = this.SPR + 'px';
       const w = Math.round(mazeImg.width * this.scale);
@@ -202,7 +202,9 @@ const zamoraGame = {
   },
 
   randomSpawn(ignore=null){
-      for(let i=0;i<50;i++){
+      let attempts=0;
+      while(attempts<200){
+        attempts++;
         const x=Math.round(Math.random()*(canvas.width-this.SPR));
         const y=Math.round(Math.random()*(canvas.height-this.SPR));
         const sx=Math.round(x/this.step)*this.step;
@@ -212,7 +214,7 @@ const zamoraGame = {
         if(Math.hypot(this.p.x-sx,this.p.y-sy)<this.SPR) continue;
         return {x:sx,y:sy,dir:null};
       }
-      return {x:Math.round(806*this.scale),y:Math.round(325*this.scale),dir:null};
+      return {x:this.step,y:this.step,dir:null};
   },
 
   /* -------- colisión píxel‑perfect -------- */

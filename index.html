@@ -161,15 +161,17 @@ const zamoraGame = {
     for(const z of this.zs){
       if(z.gif !== enemyGif) z.gif.remove();
     }
-    this.zs=[Object.assign({gif:enemyGif}, this.randomSpawn())];
+    this.zs=[];
     {
       const x = Math.round(432*this.scale);
       const y = Math.round(180*this.scale);
       this.p={
         x: Math.round(x/this.step)*this.step,
         y: Math.round(y/this.step)*this.step
-      }; // inicio en pasillo libre
+      };
+      if(this.blocked(this.p.x,this.p.y)) this.p=this.randomSpawn();
     }
+    this.zs=[Object.assign({gif:enemyGif,dir:null}, this.randomSpawn())];
     this.heroMoving=false;
     zamoraMusic.currentTime=0;
     heroGif.src="hombre.gif";
@@ -182,15 +184,17 @@ const zamoraGame = {
     for(const z of this.zs){
       if(z.gif !== enemyGif) z.gif.remove();
     }
-    this.zs=[Object.assign({gif:enemyGif}, this.randomSpawn())];
+    this.zs=[];
     {
       const x = Math.round(432*this.scale);
       const y = Math.round(180*this.scale);
       this.p={
         x: Math.round(x/this.step)*this.step,
         y: Math.round(y/this.step)*this.step
-      }; // inicio en pasillo libre
+      };
+      if(this.blocked(this.p.x,this.p.y)) this.p=this.randomSpawn();
     }
+    this.zs=[Object.assign({gif:enemyGif,dir:null}, this.randomSpawn())];
     this.heroMoving=false;
     zamoraMusic.currentTime=0;
     heroGif.src="hombre.gif";
@@ -206,9 +210,9 @@ const zamoraGame = {
         if(this.blocked(sx,sy)) continue;
         if(this.zs.some(z=>z!==ignore && Math.hypot(z.x-sx,z.y-sy)<this.SPR)) continue;
         if(Math.hypot(this.p.x-sx,this.p.y-sy)<this.SPR) continue;
-        return {x:sx,y:sy};
+        return {x:sx,y:sy,dir:null};
       }
-      return {x:Math.round(806*this.scale),y:Math.round(325*this.scale)};
+      return {x:Math.round(806*this.scale),y:Math.round(325*this.scale),dir:null};
   },
 
   /* -------- colisión píxel‑perfect -------- */
@@ -290,13 +294,16 @@ const zamoraGame = {
     if(++this.frame % this.moveFreq === 0){
       for(const z of this.zs){
         const step = this.nextStep(z);
-        if(step) this.move(z, step.dx, step.dy);
-        else {
+        if(step){
+          z.dir=step; this.move(z, step.dx, step.dy);
+        } else if(z.dir && !this.blocked(z.x+z.dir.dx, z.y+z.dir.dy)){
+          this.move(z,z.dir.dx,z.dir.dy);
+        } else {
           const dirs=[{dx:this.step,dy:0},{dx:-this.step,dy:0},{dx:0,dy:this.step},{dx:0,dy:-this.step}];
           const opts=dirs.filter(d=>!this.blocked(z.x+d.dx,z.y+d.dy));
           if(opts.length){
             const r=opts[Math.floor(Math.random()*opts.length)];
-            this.move(z,r.dx,r.dy);
+            z.dir=r; this.move(z,r.dx,r.dy);
           }
         }
       }
@@ -307,7 +314,7 @@ const zamoraGame = {
       this.nextSpawn+=1800;
       const gif=createZamoraGif();
       const pos=this.randomSpawn();
-      this.zs.push(Object.assign({gif}, pos));
+      this.zs.push(Object.assign({gif,dir:null}, pos));
       if(this.moveFreq>2) this.moveFreq--;
     }
 

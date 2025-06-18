@@ -97,11 +97,16 @@ const zamoraGame = {
   step: 16,             // tamaño paso base
   scale: BASE_SCALE,
   moveFreq:8,           // frames por movimiento de Zamora (inicial más lento)
+  baseHeroFreq:6,       // velocidad normal del héroe
   heroFreq:6,           // frames por movimiento del héroe
   keys:{}, frame:0, score:0, lives:4,
   p:{}, zs:[], pix:null, mazeCanvas:null, nextSpawn:1800,
   titleHue:0,
   heroMoving:false,
+  power:null, powerActive:false, powerEnd:0, nextPower:900,
+  bullets:[],
+  facing:{x:1,y:0},
+  prevSpace:false,
 
   /* -------- iniciar -------- */
   start(){
@@ -136,14 +141,24 @@ const zamoraGame = {
       this.pix = offCtx.getImageData(0,0,w,h).data;
 
       this.reset();
+      this.facing={x:1,y:0};
 
       /* mostrar GIFs */
       heroGif .style.display = 'block';
       enemyGif.style.display = 'block';
       this.zs[0].gif = enemyGif;
 
-      window.onkeydown = e => this.keys[e.key]=true;
-      window.onkeyup   = e => this.keys[e.key]=false;
+      window.onkeydown = e => {
+        this.keys[e.key]=true;
+        if(this.powerActive && e.key===' ' && !this.prevSpace){
+          this.shoot();
+          this.prevSpace=true;
+        }
+      };
+      window.onkeyup   = e => {
+        this.keys[e.key]=false;
+        if(e.key===' ') this.prevSpace=false;
+      };
 
       this.loop = ()=>{ this.update(); this.draw(); anim = requestAnimationFrame(this.loop); };
       this.loop();
@@ -164,6 +179,7 @@ const zamoraGame = {
   /* -------- reinicio -------- */
   reset(){
     this.keys={}; this.frame=0; this.score=0; this.lives=4;
+    this.heroFreq=this.baseHeroFreq;
     this.moveFreq=this.heroFreq+2; this.nextSpawn=1800;
     for(const z of this.zs){
       if(z.gif !== enemyGif) z.gif.remove();
@@ -180,6 +196,9 @@ const zamoraGame = {
     }
     this.zs=[Object.assign({gif:enemyGif,dir:null}, this.randomSpawn())];
     this.heroMoving=false;
+    this.power=null; this.powerActive=false; this.powerEnd=0; this.nextPower=900;
+    this.bullets=[]; this.prevSpace=false;
+    heroGif.style.filter='';
     zamoraMusic.currentTime=0;
     heroGif.src="hombre.gif";
     playZamoraMusic();
@@ -187,6 +206,7 @@ const zamoraGame = {
 
   partialReset(){
     this.keys={}; this.frame=0; this.score=0;
+    this.heroFreq=this.baseHeroFreq;
     this.moveFreq=this.heroFreq+2; this.nextSpawn=1800;
     for(const z of this.zs){
       if(z.gif !== enemyGif) z.gif.remove();
@@ -203,6 +223,8 @@ const zamoraGame = {
     }
     this.zs=[Object.assign({gif:enemyGif,dir:null}, this.randomSpawn())];
     this.heroMoving=false;
+    this.power=null; this.powerActive=false; this.powerEnd=0; this.nextPower=900;
+    this.bullets=[]; this.prevSpace=false; heroGif.style.filter='';
     zamoraMusic.currentTime=0;
     heroGif.src="hombre.gif";
     playZamoraMusic();
@@ -284,14 +306,51 @@ const zamoraGame = {
     return best;
   },
 
+  shoot(){
+    const speed=this.step*2;
+    this.bullets.push({
+      x:this.p.x+this.SPR/2,
+      y:this.p.y+this.SPR/2,
+      dx:this.facing.x*speed,
+      dy:this.facing.y*speed
+    });
+  },
+
   /* -------- lógica de juego -------- */
   update(){
+    /* power-up logic */
+    if(!this.power && this.frame >= this.nextPower){
+      const pos=this.randomSpawn();
+      this.power={x:pos.x,y:pos.y,start:this.frame};
+    }
+    if(this.power && this.frame - this.power.start >= 900){
+      this.power=null;
+      this.nextPower=this.frame+900;
+    }
+    if(this.power && Math.hypot(this.p.x-this.power.x,this.p.y-this.power.y)<this.SPR){
+      this.power=null;
+      this.powerActive=true;
+      this.powerEnd=this.frame+900;
+      this.heroFreq=3;
+      heroGif.style.filter='hue-rotate(90deg)';
+      this.nextPower=this.powerEnd+900;
+    }
+    if(this.powerActive && this.frame>=this.powerEnd){
+      this.powerActive=false;
+      this.heroFreq=this.baseHeroFreq;
+      heroGif.style.filter='';
+    }
+
     /* movimiento héroe */
     const mvLeft  = this.keys['ArrowLeft']  || this.keys['a'];
     const mvRight = this.keys['ArrowRight'] || this.keys['d'];
     const mvUp    = this.keys['ArrowUp']    || this.keys['w'];
     const mvDown  = this.keys['ArrowDown']  || this.keys['s'];
     const moving = mvLeft||mvRight||mvUp||mvDown;
+    if(mvLeft)  this.facing={x:-1,y:0};
+    if(mvRight) this.facing={x:1,y:0};
+    if(mvUp)    this.facing={x:0,y:-1};
+    if(mvDown)  this.facing={x:0,y:1};
     if(moving && this.frame % this.heroFreq === 0){
       if(mvLeft)  this.move(this.p,-this.step,0);
       if(mvRight) this.move(this.p, this.step,0);
@@ -344,6 +403,25 @@ const zamoraGame = {
       if(this.moveFreq>2) this.moveFreq--;
     }
 
+    /* mover balas */
+    for(const b of this.bullets){
+      b.x+=b.dx; b.y+=b.dy;
+      if(this.blocked(b.x,b.y) || b.x<0||b.y<0||b.x>canvas.width||b.y>canvas.height){
+        b.remove=true;
+        continue;
+      }
+      for(let i=this.zs.length-1;i>=0;i--){
+        const z=this.zs[i];
+        if(Math.hypot(b.x-z.x,b.y-z.y)<this.SPR/2){
+          z.gif.remove();
+          this.zs.splice(i,1);
+          b.remove=true;
+          break;
+        }
+      }
+    }
+    this.bullets=this.bullets.filter(b=>!b.remove);
+
     /* score +1 cada 30 frames */
     if(this.frame%30===0) this.score++;
 
@@ -364,6 +442,15 @@ const zamoraGame = {
   /* -------- dibujado -------- */
   draw(){
     ctx.drawImage(this.mazeCanvas,0,0,canvas.width,canvas.height);
+
+    if(this.power){
+      ctx.fillStyle='#FFD700';
+      ctx.fillRect(this.power.x, this.power.y, this.SPR/2, this.SPR/2);
+    }
+    ctx.fillStyle='cyan';
+    for(const b of this.bullets){
+      ctx.fillRect(b.x,b.y,4,4);
+    }
 
     /* cartel neón */
     ctx.save();

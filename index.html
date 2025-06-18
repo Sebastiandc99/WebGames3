@@ -398,14 +398,7 @@ const zamoraGame = {
       }
     }
 
-    /* generar nuevo Zamora cada 30 segundos */
-    if(this.frame===this.nextSpawn){
-      this.nextSpawn+=1800;
-      const gif=createZamoraGif();
-      const pos=this.randomSpawn();
-      this.zs.push(Object.assign({gif,dir:null}, pos));
-      if(this.moveFreq>2) this.moveFreq--;
-    }
+    let enemyKilled=false;
 
     /* mover balas */
     for(const b of this.bullets){
@@ -421,11 +414,23 @@ const zamoraGame = {
           z.gif.remove();
           this.zs.splice(i,1);
           b.remove=true;
+          enemyKilled=true;
           break;
         }
       }
     }
     this.bullets=this.bullets.filter(b=>!b.remove);
+
+    if(enemyKilled) this.nextSpawn=this.frame+1800;
+
+    /* generar nuevo Zamora cada 30 segundos */
+    if(this.frame===this.nextSpawn){
+      this.nextSpawn+=1800;
+      const gif=createZamoraGif();
+      const pos=this.randomSpawn();
+      this.zs.push(Object.assign({gif,dir:null}, pos));
+      if(this.moveFreq>2) this.moveFreq--;
+    }
 
     /* score +1 cada 30 frames */
     if(this.frame%30===0) this.score++;

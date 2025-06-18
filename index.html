@@ -227,13 +227,18 @@ const zamoraGame = {
   /* -------- colisión píxel‑perfect -------- */
   blocked(nx,ny){
     const d=this.pix, w=canvas.width, h=canvas.height, s=this.SPR-4; // margen 4 px
-    const corners=[[nx,ny],[nx+s,ny],[nx,ny+s],[nx+s,ny+s]];
-    return corners.some(([x,y])=>{
-      if(x<0||y<0||x>=w||y>=h) return true;            // fuera del canvas
+    const mid=s/2;
+    const pts=[
+      [nx,ny],[nx+s,ny],[nx,ny+s],[nx+s,ny+s], // esquinas
+      [nx+mid,ny],[nx+mid,ny+s],[nx,ny+mid],[nx+s,ny+mid], // bordes
+      [nx+mid,ny+mid]                              // centro
+    ];
+    return pts.some(([x,y])=>{
+      if(x<0||y<0||x>=w||y>=h) return true;        // fuera del canvas
       const i=((y|0)*w+(x|0))*4;
       const r=d[i], g=d[i+1], b=d[i+2], a=d[i+3];
-      if(a<50) return false;                          // espacio transparente
-      return r<50 && g<50 && b<50;                    // pared negra
+      if(a<50) return false;                        // espacio transparente
+      return r<50 && g<50 && b<50;                  // pared negra
     });
   },
   move(o,dx,dy){

@@ -313,7 +313,15 @@ const zamoraGame = {
           if(this.move(z, step.dx, step.dy)){
             z.dir = step;
           }else{
-            z.dir = null;
+            // si no puede avanzar por la ruta calculada, intenta otro camino
+            const dirs=[{dx:this.step,dy:0},{dx:-this.step,dy:0},{dx:0,dy:this.step},{dx:0,dy:-this.step}];
+            const opts=dirs.filter(d=>!this.blocked(z.x+d.dx,z.y+d.dy));
+            if(opts.length){
+              const r=opts[Math.floor(Math.random()*opts.length)];
+              if(this.move(z,r.dx,r.dy)) z.dir=r; else z.dir=null;
+            }else{
+              z.dir=null;
+            }
           }
         } else if(z.dir && !this.blocked(z.x+z.dir.dx, z.y+z.dir.dy)){
           if(!this.move(z,z.dir.dx,z.dir.dy)) z.dir=null;

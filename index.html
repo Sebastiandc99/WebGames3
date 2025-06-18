@@ -247,8 +247,8 @@ const zamoraGame = {
   },
 
   /* -------- colisión píxel‑perfect -------- */
-  blocked(nx,ny){
-    const d=this.pix, w=canvas.width, h=canvas.height, s=this.SPR-4; // margen 4 px
+  blocked(nx, ny, size = this.SPR - 4){
+    const d=this.pix, w=canvas.width, h=canvas.height, s=size; // margen 4 px
     const mid=s/2;
     const pts=[
       [nx,ny],[nx+s,ny],[nx,ny+s],[nx+s,ny+s], // esquinas
@@ -313,10 +313,10 @@ const zamoraGame = {
   shoot(){
     const speed=this.step*2;
     this.bullets.push({
-      x:this.p.x+this.SPR/2,
-      y:this.p.y+this.SPR/2,
-      dx:this.facing.x*speed,
-      dy:this.facing.y*speed
+      x:this.p.x + this.SPR,
+      y:this.p.y + this.SPR/2,
+      dx:speed,
+      dy:0
     });
   },
 
@@ -410,7 +410,8 @@ const zamoraGame = {
     /* mover balas */
     for(const b of this.bullets){
       b.x+=b.dx; b.y+=b.dy;
-      if(this.blocked(b.x,b.y) || b.x<0||b.y<0||b.x>canvas.width||b.y>canvas.height){
+      if(this.blocked(b.x, b.y, 4) ||
+         b.x<0 || b.y<0 || b.x>canvas.width || b.y>canvas.height){
         b.remove=true;
         continue;
       }

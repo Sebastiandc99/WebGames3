@@ -164,7 +164,7 @@ const zamoraGame = {
   /* -------- reinicio -------- */
   reset(){
     this.keys={}; this.frame=0; this.score=0; this.lives=4;
-    this.moveFreq=6; this.nextSpawn=1800;
+    this.moveFreq=this.heroFreq; this.nextSpawn=1800;
     for(const z of this.zs){
       if(z.gif !== enemyGif) z.gif.remove();
     }
@@ -187,7 +187,7 @@ const zamoraGame = {
 
   partialReset(){
     this.keys={}; this.frame=0; this.score=0;
-    this.moveFreq=6; this.nextSpawn=1800;
+    this.moveFreq=this.heroFreq; this.nextSpawn=1800;
     for(const z of this.zs){
       if(z.gif !== enemyGif) z.gif.remove();
     }
@@ -246,10 +246,11 @@ const zamoraGame = {
     let nx=o.x, ny=o.y;
     for(let i=0;i<steps;i++){
       nx+=dx/steps; ny+=dy/steps;
-      if(this.blocked(nx,ny)) return;
-      if(o!==this.p && this.zs.some(z=>z!==o && Math.hypot(z.x-nx,z.y-ny)<this.SPR)) return;
+      if(this.blocked(nx,ny)) return false;
+      if(o!==this.p && this.zs.some(z=>z!==o && Math.hypot(z.x-nx,z.y-ny)<this.SPR)) return false;
     }
     o.x=nx; o.y=ny;
+    return true;
   },
 
   /* -------- calcular ruta -------- */
@@ -309,15 +310,19 @@ const zamoraGame = {
       for(const z of this.zs){
         const step = this.nextStep(z);
         if(step){
-          z.dir=step; this.move(z, step.dx, step.dy);
+          if(this.move(z, step.dx, step.dy)){
+            z.dir = step;
+          }else{
+            z.dir = null;
+          }
         } else if(z.dir && !this.blocked(z.x+z.dir.dx, z.y+z.dir.dy)){
-          this.move(z,z.dir.dx,z.dir.dy);
+          if(!this.move(z,z.dir.dx,z.dir.dy)) z.dir=null;
         } else {
           const dirs=[{dx:this.step,dy:0},{dx:-this.step,dy:0},{dx:0,dy:this.step},{dx:0,dy:-this.step}];
           const opts=dirs.filter(d=>!this.blocked(z.x+d.dx,z.y+d.dy));
           if(opts.length){
             const r=opts[Math.floor(Math.random()*opts.length)];
-            z.dir=r; this.move(z,r.dx,r.dy);
+            if(this.move(z,r.dx,r.dy)) z.dir=r; else z.dir=null;
           }
         }
       }

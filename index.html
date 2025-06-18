@@ -8,6 +8,7 @@
   body{margin:0;font-family:sans-serif;background:#111;color:#eee;
        display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden}
   #menu,canvas{text-align:center}
+  canvas{image-rendering:pixelated}
   button{padding:1rem 2rem;margin:.8rem;font-size:1.1rem;border:none;border-radius:8px;
          cursor:pointer;background:#2196f3;color:#fff}
   button:hover{background:#1976d2}
@@ -26,6 +27,7 @@
 // util navegación
 const canvas=document.getElementById('gameCanvas');
 const ctx   =canvas.getContext('2d');
+ctx.imageSmoothingEnabled=false;
 const menu  =document.getElementById('menu');
 const back  =document.getElementById('backBtn');
 const zamoraMusic=new Audio('musica_zamora.mp3');
@@ -121,12 +123,16 @@ const zamoraGame = {
       canvas.width  = w;
       canvas.height = h;
       const mazeCanvas = Object.assign(document.createElement('canvas'), {width:w, height:h});
-      mazeCanvas.getContext('2d').drawImage(mazeImg,0,0,w,h);
+      const mctx = mazeCanvas.getContext('2d');
+      mctx.imageSmoothingEnabled = false;
+      mctx.drawImage(mazeImg,0,0,w,h);
       this.mazeCanvas = mazeCanvas;
       /* capturar bitmap del laberinto */
       const off = Object.assign(document.createElement('canvas'), {width:w, height:h});
-      off.getContext('2d').drawImage(mazeCanvas,0,0,w,h);
-      this.pix = off.getContext('2d').getImageData(0,0,w,h).data;
+      const offCtx = off.getContext('2d');
+      offCtx.imageSmoothingEnabled = false;
+      offCtx.drawImage(mazeCanvas,0,0,w,h);
+      this.pix = offCtx.getImageData(0,0,w,h).data;
 
       this.reset();
 

@@ -96,7 +96,7 @@ const zamoraGame = {
   SPR : 32,             // tamaño sprite (ajustado al BASE_SCALE)
   step: 16,             // tamaño paso base
   scale: BASE_SCALE,
-  moveFreq:6,           // frames por movimiento de Zamora
+  moveFreq:8,           // frames por movimiento de Zamora (inicial más lento)
   heroFreq:6,           // frames por movimiento del héroe
   keys:{}, frame:0, score:0, lives:4,
   p:{}, zs:[], pix:null, mazeCanvas:null, nextSpawn:1800,
@@ -164,7 +164,7 @@ const zamoraGame = {
   /* -------- reinicio -------- */
   reset(){
     this.keys={}; this.frame=0; this.score=0; this.lives=4;
-    this.moveFreq=this.heroFreq; this.nextSpawn=1800;
+    this.moveFreq=this.heroFreq+2; this.nextSpawn=1800;
     for(const z of this.zs){
       if(z.gif !== enemyGif) z.gif.remove();
     }
@@ -187,7 +187,7 @@ const zamoraGame = {
 
   partialReset(){
     this.keys={}; this.frame=0; this.score=0;
-    this.moveFreq=this.heroFreq; this.nextSpawn=1800;
+    this.moveFreq=this.heroFreq+2; this.nextSpawn=1800;
     for(const z of this.zs){
       if(z.gif !== enemyGif) z.gif.remove();
     }
@@ -247,7 +247,6 @@ const zamoraGame = {
     for(let i=0;i<steps;i++){
       nx+=dx/steps; ny+=dy/steps;
       if(this.blocked(nx,ny)) return false;
-      if(o!==this.p && this.zs.some(z=>z!==o && Math.hypot(z.x-nx,z.y-ny)<this.SPR)) return false;
     }
     o.x=nx; o.y=ny;
     return true;

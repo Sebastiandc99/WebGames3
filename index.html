@@ -194,7 +194,7 @@ const zamoraGame = {
       };
       if(this.blocked(this.p.x,this.p.y)) this.p=this.randomSpawn();
     }
-    this.zs=[Object.assign({gif:enemyGif,dir:null}, this.randomSpawn())];
+    this.zs=[Object.assign({gif:enemyGif,dir:null,stuck:0}, this.randomSpawn())];
     this.heroMoving=false;
     this.power=null; this.powerActive=false; this.powerEnd=0; this.nextPower=900;
     this.bullets=[]; this.prevSpace=false;
@@ -221,7 +221,7 @@ const zamoraGame = {
       };
       if(this.blocked(this.p.x,this.p.y)) this.p=this.randomSpawn();
     }
-    this.zs=[Object.assign({gif:enemyGif,dir:null}, this.randomSpawn())];
+    this.zs=[Object.assign({gif:enemyGif,dir:null,stuck:0}, this.randomSpawn())];
     this.heroMoving=false;
     this.power=null; this.powerActive=false; this.powerEnd=0; this.nextPower=900;
     this.bullets=[]; this.prevSpace=false; heroGif.style.filter='';
@@ -378,6 +378,7 @@ const zamoraGame = {
     /* Zamoras se mueven cada moveFreq frames */
     if(++this.frame % this.moveFreq === 0){
       for(const z of this.zs){
+        const prevX=z.x, prevY=z.y;
         const step = this.nextStep(z);
         if(step){
           if(this.move(z, step.dx, step.dy)){
@@ -402,6 +403,17 @@ const zamoraGame = {
             const r=opts[Math.floor(Math.random()*opts.length)];
             if(this.move(z,r.dx,r.dy)) z.dir=r; else z.dir=null;
           }
+        }
+
+        if(z.x===prevX && z.y===prevY){
+          z.stuck=(z.stuck||0)+1;
+          if(z.stuck>60){
+            const pos=this.randomSpawn(z);
+            z.x=pos.x; z.y=pos.y;
+            z.stuck=0; z.dir=null;
+          }
+        }else{
+          z.stuck=0;
         }
       }
     }
@@ -439,7 +451,7 @@ const zamoraGame = {
       this.nextSpawn+=1800;
       const gif=createZamoraGif();
       const pos=this.randomSpawn();
-      this.zs.push(Object.assign({gif,dir:null}, pos));
+      this.zs.push(Object.assign({gif,dir:null,stuck:0}, pos));
       if(this.moveFreq>2) this.moveFreq--;
     }
 

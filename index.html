@@ -289,10 +289,14 @@ const zamoraGame = {
 
     const q=[{x:tx,y:ty}], dist={};
     dist[tx+','+ty]=0;
+    const w=canvas.width, h=canvas.height;
+    const wrap=(v,max)=>v<0?max-st:v>=max?0:v;
     while(q.length){
       const n=q.shift(),d=dist[n.x+','+n.y];
       for(const dir of dirs){
-        const nx=n.x+dir.dx, ny=n.y+dir.dy, key=nx+','+ny;
+        let nx=n.x+dir.dx, ny=n.y+dir.dy;
+        nx=wrap(nx,w); ny=wrap(ny,h);
+        const key=nx+','+ny;
         if(dist[key]!==undefined||this.blocked(nx,ny)) continue;
         dist[key]=d+1; q.push({x:nx,y:ny});
       }
@@ -300,8 +304,9 @@ const zamoraGame = {
 
     let best=null,bestDist=1e9;
     for(const dir of dirs){
-      const nx=sx+dir.dx, ny=sy+dir.dy,
-            key=Math.round(nx/st)*st+','+Math.round(ny/st)*st;
+      let nx=sx+dir.dx, ny=sy+dir.dy;
+      nx=wrap(nx,w); ny=wrap(ny,h);
+      const key=Math.round(nx/st)*st+','+Math.round(ny/st)*st;
       const d=dist[key];
       if(d!==undefined&&d<bestDist&&!this.blocked(nx,ny)){
         bestDist=d; best=dir;

@@ -241,6 +241,8 @@ const zamoraGame = {
         if(this.blocked(sx,sy)) continue;
         if(this.zs.some(z=>z!==ignore && Math.hypot(z.x-sx,z.y-sy)<this.SPR)) continue;
         if(Math.hypot(this.p.x-sx,this.p.y-sy)<this.SPR) continue;
+        // ensure Zamora can reach the hero from this position
+        if(!this.nextStep({x:sx,y:sy})) continue;
         return {x:sx,y:sy,dir:null};
       }
       return {x:this.step,y:this.step,dir:null};
@@ -407,7 +409,7 @@ const zamoraGame = {
 
         if(z.x===prevX && z.y===prevY){
           z.stuck=(z.stuck||0)+1;
-          if(z.stuck>60){
+          if(z.stuck>15){
             const pos=this.randomSpawn(z);
             z.x=pos.x; z.y=pos.y;
             z.stuck=0; z.dir=null;

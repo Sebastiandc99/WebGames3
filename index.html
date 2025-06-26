@@ -318,7 +318,8 @@ const zamoraGame = {
       dx:speed*this.facing.x,
       dy:speed*this.facing.y,
       size:8,
-      hue:0
+      hue:0,
+      trail:[]
     });
   },
 
@@ -404,6 +405,8 @@ const zamoraGame = {
 
     /* mover balas */
     for(const b of this.bullets){
+      b.trail.push({x:b.x,y:b.y,hue:b.hue});
+      if(b.trail.length>12) b.trail.shift();
       b.x+=b.dx; b.y+=b.dy;
       b.hue = (b.hue + 10) % 360;
       if(this.blocked(b.x, b.y, b.size) ||
@@ -461,6 +464,12 @@ const zamoraGame = {
       ctx.fillRect(this.power.x, this.power.y, this.SPR/2, this.SPR/2);
     }
     for(const b of this.bullets){
+      for(let i=0;i<b.trail.length;i++){
+        const t=b.trail[i];
+        const alpha=(i+1)/b.trail.length;
+        ctx.fillStyle=`hsla(${t.hue},100%,60%,${alpha/2})`;
+        ctx.fillRect(t.x,t.y,b.size,b.size);
+      }
       ctx.fillStyle=`hsl(${b.hue},100%,60%)`;
       ctx.fillRect(b.x,b.y,b.size,b.size);
     }

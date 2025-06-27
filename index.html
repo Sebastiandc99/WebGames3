@@ -30,6 +30,22 @@ const ctx   =canvas.getContext('2d');
 ctx.imageSmoothingEnabled=false;
 const menu  =document.getElementById('menu');
 const back  =document.getElementById('backBtn');
+const scores=[];
+const over=document.createElement('div');
+Object.assign(over.style,{position:'absolute',top:0,left:0,width:'100%',height:'100%',background:'#000',color:'#fff',display:'none',flexDirection:'column',alignItems:'center',justifyContent:'flex-start',paddingTop:'40px'});
+const overTitle=document.createElement('h1');overTitle.textContent='Escapa de Zamora';over.appendChild(overTitle);
+const q=document.createElement('p');q.textContent='¿Quién eres?';over.appendChild(q);
+const nameInput=document.createElement('input');nameInput.type='text';over.appendChild(nameInput);
+const ranking=document.createElement('div');over.appendChild(ranking);
+document.body.appendChild(over);
+function renderRanking(){
+  ranking.innerHTML='<h2>Ranking</h2>';
+  const list=scores.slice().sort((a,b)=>b.score-a.score);
+  const ol=document.createElement('ol');
+  list.forEach(s=>{const li=document.createElement('li');li.textContent=s.name+' - '+s.score;ol.appendChild(li);});
+  ranking.appendChild(ol);
+}
+nameInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&nameInput.value.trim()){scores.push({name:nameInput.value.trim(),score:zamoraGame.score});nameInput.value='';renderRanking();}});
 const zamoraMusic=new Audio('musica_zamora.mp3');
 zamoraMusic.loop=true;
 // Reduce background music volume
@@ -48,6 +64,7 @@ function stop(){cancelAnimationFrame(anim);}function clearKeys(){window.onkeydow
 back.onclick = () => {
   stop(); clearKeys();
   if(current==='zamora') zamoraGame.detach();
+  over.style.display='none';
   canvas.style.display='none'; back.style.display='none'; menu.style.display='block';
   current=null;
 };
@@ -99,7 +116,7 @@ const zamoraGame = {
   moveFreq:8,           // frames por movimiento de Zamora (inicial más lento)
   baseHeroFreq:6,       // velocidad normal del héroe
   heroFreq:6,           // frames por movimiento del héroe
-  keys:{}, frame:0, score:0, lives:4,
+  keys:{}, frame:0, score:0, lives:3,
   p:{}, zs:[], pix:null, mazeCanvas:null, nextSpawn:1800,
   titleHue:0,
   heroMoving:false,
@@ -110,6 +127,7 @@ const zamoraGame = {
 
   /* -------- iniciar -------- */
   start(){
+    over.style.display='none';
     zamoraMusic.currentTime = 0;
     playZamoraMusic();
 
@@ -178,7 +196,7 @@ const zamoraGame = {
 
   /* -------- reinicio -------- */
   reset(){
-    this.keys={}; this.frame=0; this.score=0; this.lives=4;
+    this.keys={}; this.frame=0; this.score=0; this.lives=3;
     this.heroFreq=this.baseHeroFreq;
     this.moveFreq=this.heroFreq+2; this.nextSpawn=1800;
     for(const z of this.zs){
@@ -202,6 +220,13 @@ const zamoraGame = {
     zamoraMusic.currentTime=0;
     heroGif.src="hombre.gif";
     playZamoraMusic();
+  },
+  gameOver(){
+    stop(); clearKeys();
+    this.detach();
+    canvas.style.display="none";
+    over.style.display="flex";
+    nameInput.focus();
   },
 
   partialReset(){
@@ -464,8 +489,7 @@ const zamoraGame = {
     for(const z of this.zs){
       if(Math.hypot(this.p.x-z.x,this.p.y-z.y)<this.SPR-6){
         if(--this.lives<=0){
-          alert('¡Te atraparon!');
-          this.reset();
+          this.gameOver();
         } else {
           this.partialReset();
         }

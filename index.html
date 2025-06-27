@@ -33,19 +33,32 @@ const back  =document.getElementById('backBtn');
 const scores=[];
 const over=document.createElement('div');
 Object.assign(over.style,{position:'absolute',top:0,left:0,width:'100%',height:'100%',background:'#000',color:'#fff',display:'none',flexDirection:'column',alignItems:'center',justifyContent:'flex-start',paddingTop:'40px'});
-const overTitle=document.createElement('h1');overTitle.textContent='Escapa de Zamora';over.appendChild(overTitle);
+const overTitle=document.createElement('h1');
+overTitle.textContent='GAME OVER';
+Object.assign(overTitle.style,{fontSize:'48px',margin:'0 0 20px 0'});
+over.appendChild(overTitle);
 const q=document.createElement('p');q.textContent='¿Quién eres?';over.appendChild(q);
 const nameInput=document.createElement('input');nameInput.type='text';over.appendChild(nameInput);
+const restartBtn=document.createElement('button');restartBtn.textContent='Reiniciar';over.appendChild(restartBtn);
 const ranking=document.createElement('div');over.appendChild(ranking);
 document.body.appendChild(over);
 function renderRanking(){
   ranking.innerHTML='<h2>Ranking</h2>';
   const list=scores.slice().sort((a,b)=>b.score-a.score);
   const ol=document.createElement('ol');
-  list.forEach(s=>{const li=document.createElement('li');li.textContent=s.name+' - '+s.score;ol.appendChild(li);});
+  list.forEach(s=>{const li=document.createElement('li');li.textContent=s.name+' - '+Math.max(0,s.score);ol.appendChild(li);});
   ranking.appendChild(ol);
 }
 nameInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&nameInput.value.trim()){scores.push({name:nameInput.value.trim(),score:zamoraGame.score});nameInput.value='';renderRanking();}});
+restartBtn.onclick=()=>{
+  over.style.display='none';
+  menu.style.display='none';
+  canvas.style.display='block';
+  back.style.display='block';
+  nameInput.value='';
+  current='zamora';
+  zamoraGame.start();
+};
 const zamoraMusic=new Audio('musica_zamora.mp3');
 zamoraMusic.loop=true;
 // Reduce background music volume
@@ -230,7 +243,7 @@ const zamoraGame = {
   },
 
   partialReset(){
-    this.keys={}; this.frame=0; this.score=0;
+    this.keys={}; this.frame=0;
     this.heroFreq=this.baseHeroFreq;
     this.moveFreq=this.heroFreq+2; this.nextSpawn=1800;
     for(const z of this.zs){
@@ -546,7 +559,7 @@ const zamoraGame = {
     ctx.textAlign='left';
     ctx.font='18px sans-serif';
     ctx.fillStyle='#000';                      // score negro
-    ctx.fillText('Score: '+this.score, canvas.width-140, 36);
+    ctx.fillText('Score: '+Math.max(0,this.score), canvas.width-140, 36);
     ctx.fillStyle='#000';
     ctx.fillText('Vidas: '+this.lives, 10, canvas.height-12);
   }
